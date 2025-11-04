@@ -2,33 +2,49 @@
 set -e
 
 BRANCH=${1:-dev}
-read -p "Enter your rig's new hostname (this will be your rig's "name" in the future, so make sure to write it down): " -r
+read -p "Enter your rig's new hostname (this will be your rig's \"name\" in the future, so make sure to write it down): " -r
 myrighostname=$REPLY
-echo $myrighostname > /etc/hostname
-sed -r -i"" "s/localhost( jubilinux)?$/localhost $myrighostname/" /etc/hosts
-sed -r -i"" "s/127.0.1.1.*$/127.0.1.1       $myrighostname/" /etc/hosts
+
+# Set hostname using hostnamectl if available (modern systemd systems), otherwise edit /etc/hostname directly
+if command -v hostnamectl &> /dev/null; then
+    hostnamectl set-hostname "$myrighostname"
+else
+    echo "$myrighostname" > /etc/hostname
+fi
+
+# Update /etc/hosts
+sed -i "s/localhost\( jubilinux\)\?$/localhost $myrighostname/" /etc/hosts
+sed -i "s/127\.0\.1\.1.*$/127.0.1.1       $myrighostname/" /etc/hosts
 
 # if passwords are old, force them to be changed at next login
 passwd -S root 2>/dev/null | grep 20[01][0-6] && passwd -e root
 # automatically expire edison account if its password is not changed in 3 days
 passwd -S edison 2>/dev/null | grep 20[01][0-6] && passwd -e edison -i 3
 
-# Password checking for Raspbian
-if test -f /etc/os-release && grep -q Raspbian /etc/os-release && test -f /boot/issue.txt ; then
-    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' /boot/issue.txt)" == "$(sudo passwd -S root|awk '{print $3}')" ]]; then 
+# Password checking for Raspbian/Raspberry Pi OS
+# Check for issue.txt in both old (/boot/issue.txt) and new (/boot/firmware/issue.txt) locations
+ISSUE_FILE=""
+if test -f /boot/firmware/issue.txt; then
+    ISSUE_FILE="/boot/firmware/issue.txt"
+elif test -f /boot/issue.txt; then
+    ISSUE_FILE="/boot/issue.txt"
+fi
+
+if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release && test -n "$ISSUE_FILE" ; then
+    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' "$ISSUE_FILE")" == "$(passwd -S root|awk '{print $3}')" ]]; then
         # Password of 'root' user has the same date as the reference build date. Change it.
         passwdPrompt=1
         echo "Please select a secure password for ssh logins to your rig (same password for multiple accounts is fine):"
         echo 'For the "root" account:'
-        sudo passwd root 
+        passwd root
     fi
-    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' /boot/issue.txt)" == "$(sudo passwd -S pi|awk '{print $3}')" ]]; then 
+    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' "$ISSUE_FILE")" == "$(passwd -S pi|awk '{print $3}')" ]]; then
         # Password of 'pi' user has the same date as the reference build date. Change it.
         # If we haven't already prompted with the following text, display it.
-        test ${passwdPrompt:-0} -ne 1 && 
+        test ${passwdPrompt:-0} -ne 1 &&
             echo "Please select a secure password for ssh logins to your rig (same password for multiple accounts is fine):"
         echo 'For the "pi" account:'
-        sudo passwd pi 
+        passwd pi
     fi
     unset passwdPrompt
 fi
