@@ -30,7 +30,17 @@ elif test -f /boot/issue.txt; then
     ISSUE_FILE="/boot/issue.txt"
 fi
 
-if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release && test -n "$ISSUE_FILE" ; then
+# Detect Raspberry Pi by checking os-release, device-tree model, or presence of issue.txt
+IS_RASPI=0
+if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release; then
+    IS_RASPI=1
+elif test -f /proc/device-tree/model && grep -q -i 'Raspberry Pi' /proc/device-tree/model 2>/dev/null; then
+    IS_RASPI=1
+elif test -n "$ISSUE_FILE"; then
+    IS_RASPI=1
+fi
+
+if [ "$IS_RASPI" -eq 1 ] && [ -n "$ISSUE_FILE" ]; then
     # Extract date from issue.txt in YYYY-MM-DD format
     BUILD_DATE=$(awk -F'[ -]' '/Raspberry/ {printf "%s-%s-%s\n", $4, $5, $6; exit}' "$ISSUE_FILE")
     if [ -n "$BUILD_DATE" ]; then
