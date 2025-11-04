@@ -49,8 +49,8 @@ fi
 if ! node --version 2>/dev/null | grep -q -e 'v[89]\.' -e 'v1[0-9]\.'; then
    echo "Installing node via n..." # For context why we don't install using apt or nvm, see https://github.com/openaps/oref0/pull/1419
    curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n
-   # Install Node 18 LTS (last version in the acceptable range)
-   sudo bash n lts
+   # Install Node 19 (last version in the acceptable range >=8,<=19)
+   sudo bash n 19
    # Delete the local n binary used to boostrap the install
    rm n
    # Install n globally
