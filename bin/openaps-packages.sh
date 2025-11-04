@@ -44,9 +44,9 @@ else
    sudo apt-get -y install jq || die "Couldn't install jq"
 fi
 
-# Install node using n if there is not an installed version of node >=8,<=18
+# Install node using n if there is not an installed version of node >=8,<=19
 # Edge case: This is not likely to work as expected if there *is* a version of node installed, but it is outside of the specified version constraints
-if ! node --version 2>/dev/null | grep -q -e 'v[89]\.' -e 'v1[0-8]\.'; then
+if ! node --version 2>/dev/null | grep -q -e 'v[89]\.' -e 'v1[0-9]\.'; then
    echo "Installing node via n..." # For context why we don't install using apt or nvm, see https://github.com/openaps/oref0/pull/1419
    curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n
    # Install Node 18 LTS (last version in the acceptable range)
