@@ -31,15 +31,12 @@ elif test -f /boot/issue.txt; then
 fi
 
 if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release && test -n "$ISSUE_FILE" ; then
-    # Extract date from issue.txt in MM/DD/YYYY format and convert to YYYY-MM-DD
-    BUILD_DATE=$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' "$ISSUE_FILE")
+    # Extract date from issue.txt in YYYY-MM-DD format
+    BUILD_DATE=$(awk -F'[ -]' '/Raspberry/ {printf "%s-%s-%s\n", $4, $5, $6; exit}' "$ISSUE_FILE")
     if [ -n "$BUILD_DATE" ]; then
-        # Convert MM/DD/YYYY to YYYY-MM-DD
-        BUILD_DATE_CONVERTED=$(echo "$BUILD_DATE" | awk -F'/' '{printf "%s-%s-%s", $3, $1, $2}')
-
         # Check root password
         ROOT_PASSWD_DATE=$(passwd -S root 2>/dev/null | awk '{print $3}')
-        if [[ "$BUILD_DATE_CONVERTED" == "$ROOT_PASSWD_DATE" ]]; then
+        if [[ "$BUILD_DATE" == "$ROOT_PASSWD_DATE" ]]; then
             # Password of 'root' user has the same date as the reference build date. Change it.
             passwdPrompt=1
             echo "Please select a secure password for ssh logins to your rig (same password for multiple accounts is fine):"
@@ -50,7 +47,7 @@ if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release
         # Check pi password if pi user exists
         if id -u pi &>/dev/null; then
             PI_PASSWD_DATE=$(passwd -S pi 2>/dev/null | awk '{print $3}')
-            if [[ "$BUILD_DATE_CONVERTED" == "$PI_PASSWD_DATE" ]]; then
+            if [[ "$BUILD_DATE" == "$PI_PASSWD_DATE" ]]; then
                 # Password of 'pi' user has the same date as the reference build date. Change it.
                 # If we haven't already prompted with the following text, display it.
                 test ${passwdPrompt:-0} -ne 1 &&
@@ -60,7 +57,7 @@ if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release
             fi
         fi
     fi
-    unset passwdPrompt BUILD_DATE BUILD_DATE_CONVERTED ROOT_PASSWD_DATE PI_PASSWD_DATE
+    unset passwdPrompt BUILD_DATE ROOT_PASSWD_DATE PI_PASSWD_DATE
 fi
 
 # set timezone
