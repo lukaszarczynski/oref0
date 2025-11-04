@@ -802,7 +802,7 @@ if prompt_yn "" N; then
         )
     else
         echo -n "Cloning oref0: "
-        (cd $HOME/src && git clone https://github.com/openaps/oref0.git) || die "Couldn't clone oref0"
+        (cd $HOME/src && git clone https://github.com/lukaszarczynski/oref0.git) || die "Couldn't clone oref0"
     fi
 
     # Make sure jq version >1.5 is installed
