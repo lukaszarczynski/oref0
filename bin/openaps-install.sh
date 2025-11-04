@@ -22,29 +22,29 @@ passwd -S root 2>/dev/null | grep 20[01][0-6] && passwd -e root
 passwd -S edison 2>/dev/null | grep 20[01][0-6] && passwd -e edison -i 3
 
 # Password checking for Raspbian/Raspberry Pi OS
-# Check for issue.txt in both old (/boot/issue.txt) and new (/boot/firmware/issue.txt) locations
-ISSUE_FILE=""
-if test -f /boot/firmware/issue.txt; then
-    ISSUE_FILE="/boot/firmware/issue.txt"
-elif test -f /boot/issue.txt; then
-    ISSUE_FILE="/boot/issue.txt"
-fi
-
-if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release && test -n "$ISSUE_FILE" ; then
-    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' "$ISSUE_FILE")" == "$(passwd -S root|awk '{print $3}')" ]]; then
-        # Password of 'root' user has the same date as the reference build date. Change it.
-        passwdPrompt=1
-        echo "Please select a secure password for ssh logins to your rig (same password for multiple accounts is fine):"
-        echo 'For the "root" account:'
-        passwd root
+if test -f /etc/os-release && grep -q -E 'Raspbian|Raspberry Pi' /etc/os-release ; then
+    # Check if pi user exists and has default password
+    if id -u pi &>/dev/null; then
+        # Try to detect if password is still default by checking if it was never changed
+        # or if user-setup-apply service indicates default password
+        if test -f /run/sshwarn || passwd -S pi 2>/dev/null | grep -q '^pi P 01/01/1970\|^pi NP'; then
+            echo "WARNING: Default password detected for 'pi' user!"
+            echo "Please select a secure password for ssh logins to your rig:"
+            echo 'For the "pi" account: (same password for multiple accounts is fine)'
+            passwd pi
+            passwdPrompt=1
+        fi
     fi
-    if [[ "$(awk -F'[ -]' '/Raspberry/ {print $5"/"$6"/"$4}' "$ISSUE_FILE")" == "$(passwd -S pi|awk '{print $3}')" ]]; then
-        # Password of 'pi' user has the same date as the reference build date. Change it.
-        # If we haven't already prompted with the following text, display it.
-        test ${passwdPrompt:-0} -ne 1 &&
-            echo "Please select a secure password for ssh logins to your rig (same password for multiple accounts is fine):"
-        echo 'For the "pi" account:'
-        passwd pi
+
+    # Check root password if it exists and is enabled
+    if passwd -S root 2>/dev/null | grep -q '^root P'; then
+        # If root has a password set, check if it's old or default
+        if passwd -S root 2>/dev/null | grep -q '^root P 01/01/1970'; then
+            test ${passwdPrompt:-0} -ne 1 &&
+                echo "Please select a secure password for ssh logins to your rig:"
+            echo 'For the "root" account: (same password for multiple accounts is fine)'
+            passwd root
+        fi
     fi
     unset passwdPrompt
 fi
