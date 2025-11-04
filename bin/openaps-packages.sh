@@ -10,6 +10,9 @@ echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
 
 apt-get install -y sudo
 sudo apt-get update && sudo apt-get -y upgrade
+
+# Detect Python version and set pip flags
+PIP_BREAK_SYSTEM=""
 ## Modern distributions (Debian Bullseye+, Ubuntu 22.04+) use Python 3 by default and do not support python2 packages.
 ## Check if python2 packages are available (older systems like Debian Stretch/Buster)
 if apt-cache show python 2>/dev/null | grep -q "Package: python" && apt-cache show python-pip 2>/dev/null | grep -q "Package: python-pip"; then
@@ -25,7 +28,10 @@ else
       python2 -m pip install numpy || die "Couldn't pip install numpy"
    else
       # Bookworm+ or modern Ubuntu - use Python 3 packages
-      sudo apt-get install -y git python-is-python3 python3-dev software-properties-common python3-numpy python3-pip watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
+      sudo apt-get install -y git python-is-python3 python3-dev python3-full software-properties-common python3-numpy python3-pip watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
+      # Bookworm+ has PEP 668 externally-managed-environment protection
+      # For dedicated embedded systems like OpenAPS rigs, we need --break-system-packages
+      PIP_BREAK_SYSTEM="--break-system-packages"
    fi
 fi
 
@@ -58,9 +64,9 @@ if ! node --version | grep -q -e 'v[89]\.' -e 'v1[[:digit:]]\.'; then
 fi
 
 # upgrade setuptools to avoid "'install_requires' must be a string" error
-sudo pip install setuptools -U # no need to die if this fails
-sudo pip install -U --default-timeout=1000 git+https://github.com/openaps/openaps.git || die "Couldn't install openaps toolkit"
-sudo pip install -U openaps-contrib || die "Couldn't install openaps-contrib"
+sudo pip install $PIP_BREAK_SYSTEM setuptools -U # no need to die if this fails
+sudo pip install $PIP_BREAK_SYSTEM -U --default-timeout=1000 git+https://github.com/openaps/openaps.git || die "Couldn't install openaps toolkit"
+sudo pip install $PIP_BREAK_SYSTEM -U openaps-contrib || die "Couldn't install openaps-contrib"
 sudo openaps-install-udev-rules || die "Couldn't run openaps-install-udev-rules"
 sudo activate-global-python-argcomplete || die "Couldn't run activate-global-python-argcomplete"
 sudo npm install -g json || die "Couldn't install npm json"
