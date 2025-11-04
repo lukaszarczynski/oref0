@@ -10,15 +10,23 @@ echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
 
 apt-get install -y sudo
 sudo apt-get update && sudo apt-get -y upgrade
-## Debian Bullseye (Raspberry Pi OS 64bit, etc) is python3 by default and does not support python2-pip.
-if ! cat /etc/os-release | grep bullseye >& /dev/null; then
+## Modern distributions (Debian Bullseye+, Ubuntu 22.04+) use Python 3 by default and do not support python2 packages.
+## Check if python2 packages are available (older systems like Debian Stretch/Buster)
+if apt-cache show python 2>/dev/null | grep -q "Package: python" && apt-cache show python-pip 2>/dev/null | grep -q "Package: python-pip"; then
+   # Old system with Python 2 packages still available
    sudo apt-get install -y git python python-dev software-properties-common python-numpy python-pip watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
 else
-   # Bullseye based OS. Get PIP2 from pypa and pip-install python packages rather than using the py3 ones from apt
-   # Also, install python-is-python2, to override the distro default of linking python to python3
-   sudo apt-get install -y git python-is-python2 python-dev-is-python2 software-properties-common watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
-   curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2 || die "Couldn't install pip"
-   python2 -m pip install numpy || die "Couldn't pip install numpy"
+   # Modern system (Bullseye+) - use Python 3 packages or Python 2 compatibility packages
+   # Try python-is-python2 first (Bullseye), fall back to python-is-python3 (Bookworm+)
+   if apt-cache show python-is-python2 2>/dev/null | grep -q "Package: python-is-python2"; then
+      # Bullseye or similar - has python2 compatibility
+      sudo apt-get install -y git python-is-python2 python-dev-is-python2 software-properties-common watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
+      curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2 || die "Couldn't install pip"
+      python2 -m pip install numpy || die "Couldn't pip install numpy"
+   else
+      # Bookworm+ or modern Ubuntu - use Python 3 packages
+      sudo apt-get install -y git python-is-python3 python3-dev software-properties-common python3-numpy python3-pip watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
+   fi
 fi
 
 # We require jq >= 1.5 for --slurpfile for merging preferences. Debian Jessie ships with 1.4.
