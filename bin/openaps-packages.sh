@@ -38,7 +38,9 @@ else
       if ! command -v python2.7 &> /dev/null; then
          echo "Python 2.7 not found, attempting to install..."
          # Try to install from package manager first
-         if sudo apt-get install -y python2.7 2>/dev/null; then
+         sudo apt-get install -y python2.7 2>/dev/null
+         # Verify that python2.7 actually works (apt might install just the library)
+         if command -v python2.7 &> /dev/null && python2.7 --version &> /dev/null; then
             echo "Python 2.7 installed from package manager"
          else
             echo "Python 2.7 not available in repos, building from source..."
