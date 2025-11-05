@@ -32,6 +32,51 @@ else
       # Bookworm+ has PEP 668 externally-managed-environment protection
       # For dedicated embedded systems like OpenAPS rigs, we need --break-system-packages
       PIP_BREAK_SYSTEM="--break-system-packages"
+
+      # Install Python 2.7 for deprecated openaps package (Python 2 syntax incompatible with Python 3)
+      echo "Installing Python 2.7 and pip2 for openaps package..."
+      if ! command -v python2.7 &> /dev/null; then
+         echo "Python 2.7 not found, attempting to install..."
+         # Try to install from package manager first
+         if sudo apt-get install -y python2.7 2>/dev/null; then
+            echo "Python 2.7 installed from package manager"
+         else
+            echo "Python 2.7 not available in repos, building from source..."
+            # Install build dependencies
+            sudo apt-get install -y build-essential libssl-dev zlib1g-dev libncurses5-dev \
+                libncursesw5-dev libreadline-dev libsqlite3-dev libgdbm-dev libdb5.3-dev \
+                libbz2-dev libexpat1-dev liblzma-dev tk-dev libffi-dev || die "Couldn't install build dependencies"
+
+            # Download and compile Python 2.7.18 (final Python 2 release)
+            cd /tmp
+            wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz || die "Couldn't download Python 2.7.18"
+            tar -xzf Python-2.7.18.tgz
+            cd Python-2.7.18
+            ./configure --enable-optimizations --prefix=/usr/local || die "Couldn't configure Python 2.7.18"
+            make -j$(nproc) || die "Couldn't compile Python 2.7.18"
+            sudo make altinstall || die "Couldn't install Python 2.7.18"
+            cd /tmp
+            rm -rf Python-2.7.18 Python-2.7.18.tgz
+            echo "Python 2.7.18 compiled and installed from source"
+         fi
+      fi
+
+      # Create python2 symlink if it doesn't exist
+      if ! command -v python2 &> /dev/null; then
+         sudo ln -sf /usr/local/bin/python2.7 /usr/local/bin/python2 || sudo ln -sf /usr/bin/python2.7 /usr/local/bin/python2
+      fi
+
+      # Install pip for Python 2.7
+      if ! command -v pip2 &> /dev/null && ! command -v pip2.7 &> /dev/null; then
+         echo "Installing pip for Python 2.7..."
+         curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o /tmp/get-pip.py
+         sudo python2.7 /tmp/get-pip.py || die "Couldn't install pip2"
+         rm /tmp/get-pip.py
+         # Create pip2 symlink if needed
+         if ! command -v pip2 &> /dev/null && command -v pip2.7 &> /dev/null; then
+            sudo ln -sf $(which pip2.7) /usr/local/bin/pip2
+         fi
+      fi
    fi
 fi
 

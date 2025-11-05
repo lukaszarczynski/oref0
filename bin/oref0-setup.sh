@@ -756,11 +756,11 @@ if prompt_yn "" N; then
     rm -rf $directory/.git
     echo Removed any existing git
     echo "Uninstalling parsedatetime, reinstalling correct version"
-    pip uninstall -y parsedatetime && pip install -I parsedatetime==2.5
+    pip2 uninstall -y parsedatetime && pip2 install -I parsedatetime==2.5
     # TODO: delete this after openaps 0.2.2 release
     echo Checking openaps 0.2.2 installation with --nogit support
     if ! openaps --version 2>&1 | egrep "0.[2-9].[2-9]"; then
-        echo Installing latest openaps w/ nogit && sudo pip install --default-timeout=1000 git+https://github.com/openaps/openaps.git@nogit || die "Couldn't install openaps w/ nogit"
+        echo Installing latest openaps w/ nogit using Python 2 && sudo pip2 install --default-timeout=1000 git+https://github.com/openaps/openaps.git@nogit || die "Couldn't install openaps w/ nogit"
     fi
 
     #Make sure the directory is valid
@@ -826,9 +826,9 @@ if prompt_yn "" N; then
 
     echo Checking mmeowlink installation
     if openaps vendor add --path . mmeowlink.vendors.mmeowlink 2>&1 | grep "No module"; then
-        pip show mmeowlink | egrep "Version: 0.11.1" || (
-            echo Installing latest mmeowlink
-            sudo pip install --default-timeout=1000 -U mmeowlink || die "Couldn't install mmeowlink"
+        pip2 show mmeowlink | egrep "Version: 0.11.1" || (
+            echo Installing latest mmeowlink using Python 2
+            sudo pip2 install --default-timeout=1000 -U mmeowlink || die "Couldn't install mmeowlink"
         )
     fi
 
@@ -1045,8 +1045,8 @@ if prompt_yn "" N; then
     #    do_openaps_import $HOME/src/oref0/lib/oref0-setup/mdt-cgm.json
     #fi
 
-    sudo pip install --default-timeout=1000 flask flask-restful  || die "Can't add xdrip cgm - error installing flask packages"
-    sudo pip install --default-timeout=1000 -U flask-cors
+    sudo pip3 install --default-timeout=1000 flask flask-restful  || die "Can't add xdrip cgm - error installing flask packages"
+    sudo pip3 install --default-timeout=1000 -U flask-cors
 
     # xdrip CGM (xDripAPS), also gets installed when using xdrip-js
     if [[ ${CGM,,} =~ "xdrip" || ${CGM,,} =~ "xdrip-js" ]]; then
@@ -1102,8 +1102,8 @@ if prompt_yn "" N; then
     # Install Pancreabble
     echo Checking for BT Pebble Mac
     if [[ ! -z "$BT_PEB" ]]; then
-        sudo pip install --default-timeout=1000 libpebble2
-        sudo pip install --default-timeout=1000 --user git+https://github.com/mddub/pancreabble.git
+        sudo pip2 install --default-timeout=1000 libpebble2
+        sudo pip2 install --default-timeout=1000 --user git+https://github.com/mddub/pancreabble.git
         oref0-bluetoothup
         sudo rfcomm bind hci0 $BT_PEB
         do_openaps_import $HOME/src/oref0/lib/oref0-setup/pancreabble.json
