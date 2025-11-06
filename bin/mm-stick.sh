@@ -11,7 +11,7 @@ usage "$@" <<EOF
 Usage: $self [{scan,diagnose,help},...]
 
     scan      - Print the local location of a plugged in stick.
-    diagnose  - Run python -m decocare.stick \$(python -m decocare.scan)
+    diagnose  - Run python2 -m decocare.stick \$(python2 -m decocare.scan)
     warmup    - Runs scan and diagnose with no output.
                 Exits 0 on success, non-zero exit code
                 otherwise.
@@ -45,23 +45,23 @@ while [ -n "$OPERATION" ] ; do
 (
 case $OPERATION in
   scan)
-    eval python -m decocare.scan
+    eval python2 -m decocare.scan
     ;;
   diagnose)
-    eval python -m decocare.stick $(python -m decocare.scan)
+    eval python2 -m decocare.stick $(python2 -m decocare.scan)
     ;;
   warmup)
-    eval python -m decocare.stick $(python -m decocare.scan) > /dev/null
+    eval python2 -m decocare.stick $(python2 -m decocare.scan) > /dev/null
     ;;
   remove)
     eval modprobe -r usbserial
     ;;
   insert)
-    #Bus 002 Device 011: ID 0a21:8001 Medtronic Physio Control Corp. 
+    #Bus 002 Device 011: ID 0a21:8001 Medtronic Physio Control Corp.
     eval modprobe --first-time usbserial vendor=0x0a21 product=0x8001
     ;;
   udev-info)
-    eval udevadm info --query=all $(python -m decocare.scan)
+    eval udevadm info --query=all $(python2 -m decocare.scan)
     ;;
   reset-usb)
     if [[ $EUID != 0 ]] ; then

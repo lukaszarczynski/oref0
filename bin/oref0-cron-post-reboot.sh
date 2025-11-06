@@ -15,7 +15,7 @@ XDRIP_PATH="$(get_pref_string .xdrip_path)"
 ttyport="$(get_pref_string .ttyport)"
 
 if [[ "${CGM,,}" =~ "xdrip" ]]; then
-    python "$XDRIP_PATH/xDripAPS.py" &
+    python2 "$XDRIP_PATH/xDripAPS.py" &
 fi
 
 oref0-delete-future-entries &
