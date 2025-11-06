@@ -1272,6 +1272,22 @@ if prompt_yn "" N; then
         if is_pi; then
           echo "Making sure SPI is enabled..."
           sed -i.bak -e "s/#dtparam=spi=on/dtparam=spi=on/" $BOOT_CONFIG
+
+          # On Raspberry Pi OS Bookworm (kernel 6.1+), the old GPIO sysfs interface is restricted
+          # The Go medtronic library still uses sysfs, so we need to re-enable it via kernel parameter
+          CMDLINE_FILE="/boot/firmware/cmdline.txt"
+          if [ ! -f "$CMDLINE_FILE" ]; then
+            CMDLINE_FILE="/boot/cmdline.txt"
+          fi
+
+          if [ -f "$CMDLINE_FILE" ]; then
+            if ! grep -q "gpio-mockup.gpio_mockup_ranges" "$CMDLINE_FILE"; then
+              echo "Enabling GPIO sysfs compatibility for kernel 6.1+ (required for CC111x radio)..."
+              # Add kernel parameter to enable GPIO sysfs (required for ecc1/medtronic Go library)
+              sed -i.bak '$ s/$/ gpio_sysfs.enabled=1/' "$CMDLINE_FILE"
+              touch /tmp/reboot-required
+            fi
+          fi
         fi
 
         #Make sure radiotags are set properly for different hardware types
