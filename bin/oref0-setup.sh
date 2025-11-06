@@ -712,6 +712,13 @@ if prompt_yn "" N; then
         PIP3_BREAK_SYSTEM="--break-system-packages"
     fi
 
+    # Detect boot config file location (Bookworm moved it to /boot/firmware/config.txt)
+    if [ -f /boot/firmware/config.txt ]; then
+        BOOT_CONFIG="/boot/firmware/config.txt"
+    else
+        BOOT_CONFIG="/boot/config.txt"
+    fi
+
     # Having the loop run in the background during setup slows things way down and lengthens the time before first loop
     service cron stop
     # Kill oref0-pump-loop
@@ -1190,12 +1197,12 @@ if prompt_yn "" N; then
     if grep -qa "Explorer HAT" /proc/device-tree/hat/product &> /dev/null || [[ "$hardwaretype" =~ "explorer-hat" ]] || [[ "$hardwaretype" =~ "radiofruit" ]]; then
         echo "Looks like you have buttons and a screen!"
         echo "Enabling i2c device nodes..."
-        if ! ( grep -q i2c-dev /etc/modules-load.d/i2c.conf && egrep "^dtparam=i2c1=on" /boot/config.txt ); then
+        if ! ( grep -q i2c-dev /etc/modules-load.d/i2c.conf && egrep "^dtparam=i2c1=on" $BOOT_CONFIG ); then
             echo Enabling i2c for the first time: this will require a reboot after oref0-setup.
             touch /tmp/reboot-required
         fi
-        sed -i.bak -e "s/#dtparam=i2c_arm=on/dtparam=i2c_arm=on/" /boot/config.txt
-        egrep "^dtparam=i2c1=on" /boot/config.txt || echo "dtparam=i2c1=on,i2c1_baudrate=400000" >> /boot/config.txt
+        sed -i.bak -e "s/#dtparam=i2c_arm=on/dtparam=i2c_arm=on/" $BOOT_CONFIG
+        egrep "^dtparam=i2c1=on" $BOOT_CONFIG || echo "dtparam=i2c1=on,i2c1_baudrate=400000" >> $BOOT_CONFIG
         echo "i2c-dev" > /etc/modules-load.d/i2c.conf
         echo "Installing pi-buttons..."
         systemctl stop pi-buttons
@@ -1264,7 +1271,7 @@ if prompt_yn "" N; then
         #Turn on SPI for all pi-based setups. Not needed on the Edison.
         if is_pi; then
           echo "Making sure SPI is enabled..."
-          sed -i.bak -e "s/#dtparam=spi=on/dtparam=spi=on/" /boot/config.txt
+          sed -i.bak -e "s/#dtparam=spi=on/dtparam=spi=on/" $BOOT_CONFIG
         fi
 
         #Make sure radiotags are set properly for different hardware types
