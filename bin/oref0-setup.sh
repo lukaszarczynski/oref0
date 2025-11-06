@@ -814,12 +814,16 @@ if prompt_yn "" N; then
 
     echo Checking oref0 installation
     cd $HOME/src/oref0
+    # Install oref0 dependencies first (lodash, etc.)
+    echo Installing oref0 dependencies
+    npm install || die "Couldn't install oref0 dependencies"
+
     if git branch | grep "* master"; then
         npm list -g --depth=0 | egrep oref0@0.7.[0] || (echo Installing latest oref0 package && sudo npm install -g oref0)
     elif [[ ${npm_option,,} == "force" ]]; then
-        echo Forcing install of latest oref0 from $HOME/src/oref0/ && cd $HOME/src/oref0/ && npm run global-install
+        echo Forcing install of latest oref0 from $HOME/src/oref0/ && npm run global-install
     else
-        npm list -g --depth=0 | egrep oref0@0.7.[1-9] || (echo Installing latest oref0 from $HOME/src/oref0/ && cd $HOME/src/oref0/ && npm run global-install)
+        npm list -g --depth=0 | egrep oref0@0.7.[1-9] || (echo Installing latest oref0 from $HOME/src/oref0/ && npm run global-install)
     fi
 
     cd $directory || die "Can't cd $directory"

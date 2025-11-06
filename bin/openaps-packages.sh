@@ -28,7 +28,7 @@ else
       python2 -m pip install numpy || die "Couldn't pip install numpy"
    else
       # Bookworm+ or modern Ubuntu - use Python 3 packages
-      sudo apt-get install -y git python-is-python3 python3-dev python3-full software-properties-common python3-numpy python3-pip watchdog strace tcpdump screen acpid vim locate lm-sensors || die "Couldn't install packages"
+      sudo apt-get install -y git python-is-python3 python3-dev python3-full software-properties-common python3-numpy python3-pip watchdog strace tcpdump screen acpid vim locate lm-sensors bc || die "Couldn't install packages"
       # Bookworm+ has PEP 668 externally-managed-environment protection
       # For dedicated embedded systems like OpenAPS rigs, we need --break-system-packages
       PIP_BREAK_SYSTEM="--break-system-packages"
@@ -111,6 +111,11 @@ if ! node --version 2>/dev/null | grep -q -e 'v[89]\.' -e 'v1[0-9]\.'; then
 fi
 
 # upgrade setuptools to avoid "'install_requires' must be a string" error
-sudo pip install $PIP_BREAK_SYSTEM setuptools -U # no need to die if this fails
+# Use pip3 explicitly on modern systems, pip on old systems
+if [ -n "$PIP_BREAK_SYSTEM" ]; then
+    sudo pip3 install $PIP_BREAK_SYSTEM setuptools -U # no need to die if this fails
+else
+    sudo pip install setuptools -U # no need to die if this fails
+fi
 sudo npm install -g json || die "Couldn't install npm json"
 echo oref0 dependencies installed
