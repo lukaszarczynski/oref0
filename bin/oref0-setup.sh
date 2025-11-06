@@ -705,6 +705,13 @@ chmod 755 $OREF0_RUNAGAIN
 echocolor -n "Continue?"
 if prompt_yn "" N; then
 
+    # Detect if we need --break-system-packages flag (PEP 668 on Bookworm+)
+    PIP3_BREAK_SYSTEM=""
+    if ls /usr/lib/python*/EXTERNALLY-MANAGED &>/dev/null; then
+        echo "Detected externally-managed Python environment (Bookworm+), using --break-system-packages for pip3"
+        PIP3_BREAK_SYSTEM="--break-system-packages"
+    fi
+
     # Having the loop run in the background during setup slows things way down and lengthens the time before first loop
     service cron stop
     # Kill oref0-pump-loop
@@ -938,7 +945,7 @@ if prompt_yn "" N; then
         nightscout autoconfigure-device-crud $NIGHTSCOUT_HOST $API_SECRET || die "Could not run nightscout autoconfigure-device-crud"
         if [[ "${API_SECRET,,}" =~ "token=" ]]; then # install requirements for token based authentication
             sudo apt-get -y install python3-pip
-            sudo pip3 install --default-timeout=1000 requests || die "Can't add pip3 requests - error installing"
+            sudo pip3 install $PIP3_BREAK_SYSTEM --default-timeout=1000 requests || die "Can't add pip3 requests - error installing"
             oref0_nightscout_check || die "Error checking Nightscout permissions"
         fi
     fi
@@ -1049,8 +1056,8 @@ if prompt_yn "" N; then
     #    do_openaps_import $HOME/src/oref0/lib/oref0-setup/mdt-cgm.json
     #fi
 
-    sudo pip3 install --default-timeout=1000 flask flask-restful  || die "Can't add xdrip cgm - error installing flask packages"
-    sudo pip3 install --default-timeout=1000 -U flask-cors
+    sudo pip2 install --default-timeout=1000 flask flask-restful  || die "Can't add xdrip cgm - error installing flask packages"
+    sudo pip2 install --default-timeout=1000 -U flask-cors
 
     # xdrip CGM (xDripAPS), also gets installed when using xdrip-js
     if [[ ${CGM,,} =~ "xdrip" || ${CGM,,} =~ "xdrip-js" ]]; then

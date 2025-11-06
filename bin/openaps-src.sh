@@ -37,9 +37,6 @@ cd ~/src && \
     )
     git clone https://github.com/openaps/openaps-contrib.git || \
         (cd openaps-contrib && git pull)
-    (cd openaps-contrib && \
-        sudo python2 setup.py develop
-    )
     git clone -b dev https://github.com/lukaszarczynski/oref0.git || \
         (cd oref0 && git pull)
 )
