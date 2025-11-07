@@ -1303,6 +1303,16 @@ if prompt_yn "" N; then
         #Build Go binaries
         #go get -u -v -tags "$radiotags" github.com/ecc1/medtronic/... || die "Couldn't go get medtronic"
         go install -v -tags "$radiotags" github.com/ecc1/medtronic/cmd/...@latest || die "Couldn't go get medtronic"
+
+        # Fix GPIO for Raspberry Pi OS Bookworm (kernel 6.1+)
+        # The cc111x library needs to be patched for gpiochip512 offset
+        echo "Applying Bookworm GPIO compatibility fix..."
+        bash $HOME/src/oref0/bin/oref0-fix-bookworm-gpio.sh || echo "Warning: GPIO fix script failed, continuing anyway"
+
+        # Rebuild binaries with patched GPIO library
+        echo "Rebuilding medtronic binaries with patched GPIO library..."
+        go install -v -tags "$radiotags" github.com/ecc1/medtronic/cmd/...@latest || die "Couldn't rebuild medtronic with GPIO fix"
+
         #ln -sf /root/go/pkg/mod/github.com/ecc1/medtronic@v0.0.0-20210712211734-b8431dc5211b/cmd/pumphistory/openaps.jq $directory/ || die "Couldn't softlink openaps.jq"
         if [[ -f $directory/openaps.jq ]]; then
             ls -la $directory/openaps.jq
